@@ -66,6 +66,11 @@ usage: image_downloader.py [-h] [--engine {Google,Bing,Baidu}]
                            keywords
 ```
 
+```bash
+ python image_downloader.py -e Google -d chrome_headless -n 40 -j 10 -o "img/google/kids10/Colin_Baiocchi" -F  -S  "Colin Baiocchi"
+
+```
+
 ## License
 
 + MIT License

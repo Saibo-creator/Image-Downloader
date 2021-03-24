@@ -5,13 +5,35 @@
 from __future__ import print_function
 
 import argparse
-
+from ImageLabelingPackage.ExifImageAgeLabeler import ExifImageAgeLabeler
 import crawler
 import downloader
+import glob
+import os
 import sys
+import logging
+
+
 
 
 def main(argv):
+
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    # create file handler which logs even debug messages
+    fh = logging.FileHandler('logs/logs.log')
+    fh.setLevel(logging.INFO)
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.ERROR)
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    fh.setFormatter(formatter)
+    # add the handlers to logger
+    logger.addHandler(ch)
+    logger.addHandler(fh)
+
     parser = argparse.ArgumentParser(description="Image Downloader")
     parser.add_argument("keywords", type=str,
                         help='Keywords to search. ("in quotes")')
@@ -29,6 +51,10 @@ def main(argv):
                         help="Output directory to save downloaded images.")
     parser.add_argument("--safe-mode", "-S", action="store_true", default=False,
                         help="Turn on safe search mode. (Only effective in Google)")
+    parser.add_argument("--label-age", "-l", action="store_true", default=True,
+                        help="extract the age ")
+    parser.add_argument("--birthdate", "-B", type=str, default=None,
+                        help="birthdate of the searched person")
     parser.add_argument("--face-only", "-F", action="store_true", default=False,
                         help="Only search for ")
     parser.add_argument("--proxy_http", "-ph", type=str, default=None,
@@ -37,6 +63,7 @@ def main(argv):
                         help="Set socks5 proxy (e.g. 192.168.0.2:1080)")
 
     args = parser.parse_args(args=argv)
+    # argv = ['-e', 'Google', '-d', 'chrome_headless', '-n', '40', '-j', '10', '-o', 'img/google/kids10/Colin_Baiocchi', '-F', '-S', 'Colin Baiocchi']
 
     proxy_type = None
     proxy = None
@@ -47,6 +74,9 @@ def main(argv):
         proxy_type = "socks5"
         proxy = args.proxy_socks5
 
+    if args.label_age and args.birthdate is None:
+        raise RuntimeError("Birthdate is necessary if args.label_age is True")
+
     crawled_urls = crawler.crawl_image_urls(args.keywords,
                                             engine=args.engine, max_number=args.max_number,
                                             face_only=args.face_only, safe_mode=args.safe_mode,
@@ -55,10 +85,30 @@ def main(argv):
     downloader.download_images(image_urls=crawled_urls, dst_dir=args.output,
                                concurrency=args.num_threads, timeout=args.timeout,
                                proxy_type=proxy_type, proxy=proxy,
-                               file_prefix=args.engine)
+                               file_prefix=args.keywords)
 
-    print("Finished.")
+    ageLabeler = ExifImageAgeLabeler()
+    # dir = "Image-Downloader/download_images/google/kids10"
+    files = os.listdir(args.output)
+    # files = [file for file in files if os.path.isfile(file)]
+    for fn in files:
+        age, _ = ageLabeler.label_age(fn, birthdate_str=args.birthdate, image_dir=args.output)
+        print(age)
+        if age is not None:
+            src = os.path.join(args.output, fn)
+            imagename_with_age = os.path.splitext(fn)[0] + "|{}".format(age) + os.path.splitext(fn)[1]
+            dst = os.path.join(args.output, imagename_with_age)
+            os.rename(src, dst)
+        else:
+            src = os.path.join(args.output, fn)
+            os.remove(src)
+
+    logger.info("Finished.")
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    # main(sys.argv[1:])
+    #
+    argv = ['-e', 'Google', '-d', 'chrome_headless', '-n', '100', '-j', '10', '-o',
+            'img/google/kids10/Colin_Baiocchi', '-F', '-S', 'Colin Baiocchi', '-B', "2005-01-01"]
+    main(argv=argv)
