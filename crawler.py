@@ -295,6 +295,10 @@ def crawl_image_urls(keywords, engine="Google", max_number=10000,
             chrome_options = webdriver.ChromeOptions()
             if "headless" in browser:
                 chrome_options.add_argument("headless")
+                chrome_options.add_argument('--no-sandbox')
+                chrome_options.add_argument('--window-size=1420,1080')
+                chrome_options.add_argument('--headless')
+                chrome_options.add_argument('--disable-gpu')
             if proxy is not None and proxy_type is not None:
                 chrome_options.add_argument("--proxy-server={}://{}".format(proxy_type, proxy))
             driver = webdriver.Chrome(chrome_path, chrome_options=chrome_options)
