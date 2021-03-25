@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     startTime = int(round(time.time()))
 
-    with open('query_results/has_img/query_2000_2020_6147.csv', 'r', encoding="utf-8") as file:
+    with open('query_results/has_img/query_2006_2007_10.csv', 'r', encoding="utf-8") as file:
         line_list = file.read().splitlines()
 
     search_pairs = [(line.split(",")[0], line.split(",")[2], line.split(",")[3]) for line in line_list]
