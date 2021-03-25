@@ -1,30 +1,74 @@
 import copy
-from image_downloader import main
+import shutil
+import os
+import time
+from image_downloader import google_download
+import logging
+from ImageLabelingPackage.ImageDownloadLabeler import ImageDownloader
+from deepface import DeepFace
+from PyS3Upload.PyS3Uploader import S3Uploader
+from PyS3Upload.helper import get_time_identifier
 
 if __name__ == '__main__':
 
-    # FOLDER_NAME_INDEX = 9
-    # NAME_INDEX = 12
-    # BIRTHDATE_INDEX = 14
-    IMAGE_NUM = 50
+    log = logging.getLogger(__name__)
+    log.setLevel(logging.INFO)
 
-    # ARGV = ['-e', 'Google', '-d', 'chrome_headless', '-n', f'{IMAGE_NUM}', '-j', '10', '-o',
-    #         'img/google/kids10/{folder_name}', '-F', '-S', '{name}', '-B', "{birthdate}"]
+    IMAGE_RECALL_NUM = 50
+    REMOVE_REFERENCE_IMG = False
+    REMOVE_LOCAL_AFTER_UPLOAD = True
 
-    with open('../query_results/IMDB/query_2010_2011_47.csv', 'r', encoding="utf-8") as file:
+    startTime = int(round(time.time()))
+
+    with open('../query_results/has_img/query_2006_2007_175.csv', 'r', encoding="utf-8") as file:
         line_list = file.read().splitlines()
 
-    search_pairs = [(line.split(",")[0], line.split(",")[2]) for line in line_list]
-
+    search_pairs = [(line.split(",")[0], line.split(",")[2], line.split(",")[3]) for line in line_list]
+    imageDownloader = ImageDownloader()
+    img_root_dir = 'img/google/kids_actor_11'
     for search_pair in search_pairs:
-        # argv = copy.deepcopy(ARGV)
-        # argv[FOLDER_NAME_INDEX] = ARGV[FOLDER_NAME_INDEX].format(folder_name=search_pair[0].replace(" ", "_"))
-        # argv[NAME_INDEX] = ARGV[NAME_INDEX].format(name=search_pair[0])
-        # argv[BIRTHDATE_INDEX] = ARGV[BIRTHDATE_INDEX].format(birthdate=search_pair[1])
         folder_name = search_pair[0].replace(" ", "_")
         name = search_pair[0]
         birthdate = search_pair[1]
-        argv = ['-e', 'Google', '-d', 'chrome_headless', '-n', f'{IMAGE_NUM}', '-j', '10', '-o',
-                f'img/google/kids_actor_10/{folder_name}', '-F', '-S', f'{name}', '-B', f"{birthdate}"]
+        image_url = search_pair[2]
+        output_dir = os.path.join(img_root_dir, folder_name)
+        argv = ['-e', 'Google', '-d', 'chrome_headless', '-n', f'{IMAGE_RECALL_NUM}', '-j', '10', '-o',
+                output_dir, '-F', '-S', f'{name}', '-B', f"{birthdate}"]
 
-        main(argv=argv)
+        num_img = google_download(argv=argv)
+        valid_img = 0
+        if num_img > 0:
+            candidate_imgs = os.listdir(output_dir)
+            reference_img_name = imageDownloader.download(output_dir, image_url)
+            reference_img_path = os.path.join(output_dir, reference_img_name)
+            for img in candidate_imgs:
+                img_path = os.path.join(output_dir, img)
+                result = DeepFace.verify(reference_img_path, img_path, enforce_detection=False, model_name='VGG-Face')
+                if not result["verified"]:
+                    os.remove(img_path)
+                else:
+                    valid_img += 1
+            _, ext = os.path.splitext(reference_img_name)
+            os.rename(reference_img_path, os.path.join(output_dir, "reference_img"+ext))
+            if REMOVE_REFERENCE_IMG:
+                os.remove(os.path.join(output_dir, "reference_img", ext))
+
+        if valid_img == 0:
+            shutil.rmtree(output_dir)
+        log.info(f"valid images = {valid_img}")
+
+    time_identifier: str = get_time_identifier()
+    s3Uploader = S3Uploader(path_identifier=time_identifier)
+
+    filepath = shutil.make_archive(base_name="images", format='tar', root_dir=img_root_dir)
+
+    upload_res = s3Uploader.upload_file(input_filename=filepath, remove=True)
+
+    if upload_res == 0:
+        if REMOVE_LOCAL_AFTER_UPLOAD:
+            "S3uploader only remove the .tar files, here we delete the individual images"
+            shutil.rmtree(img_root_dir)
+
+    endTime = int(round(time.time()))
+
+    log.info("Time used {} s".format(endTime - startTime))

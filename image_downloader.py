@@ -16,23 +16,10 @@ import logging
 
 
 
-def main(argv):
+def google_download(argv):
 
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
-    # create file handler which logs even debug messages
-    fh = logging.FileHandler('logs/logs.log')
-    fh.setLevel(logging.INFO)
-    # create console handler with a higher log level
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.ERROR)
-    # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    ch.setFormatter(formatter)
-    fh.setFormatter(formatter)
-    # add the handlers to logger
-    logger.addHandler(ch)
-    logger.addHandler(fh)
 
     parser = argparse.ArgumentParser(description="Image Downloader")
     parser.add_argument("keywords", type=str,
@@ -93,7 +80,6 @@ def main(argv):
     # files = [file for file in files if os.path.isfile(file)]
     for fn in files:
         age, _ = ageLabeler.label_age(fn, birthdate_str=args.birthdate, image_dir=args.output)
-        print(age)
         if age is not None:
             src = os.path.join(args.output, fn)
             imagename_with_age = os.path.splitext(fn)[0] + "|{}".format(age) + os.path.splitext(fn)[1]
@@ -105,10 +91,12 @@ def main(argv):
 
     logger.info("Finished.")
 
+    return len(os.listdir(args.output))
+
 
 if __name__ == '__main__':
     # main(sys.argv[1:])
     #
     argv = ['-e', 'Google', '-d', 'chrome_headless', '-n', '100', '-j', '10', '-o',
             'img/google/kids10/Colin_Baiocchi', '-F', '-S', 'Colin Baiocchi', '-B', "2005-01-01"]
-    main(argv=argv)
+    google_download(argv=argv)

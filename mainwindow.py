@@ -187,7 +187,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.progressBar_current.setValue(0)
             self.progressBar_current.setFormat(keywords + ", %p%, %v/%m")
 
-            thread_download = Thread(target=image_downloader.main, args=[
+            thread_download = Thread(target=image_downloader.google_download, args=[
                                      shlex.split(str_paras)])
             thread_download.start()
 

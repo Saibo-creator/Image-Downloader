@@ -21,7 +21,7 @@ headers = {
 }
 
 
-def download_image(image_url, dst_dir, file_name, timeout=20, proxy_type=None, proxy=None):
+def download_image(image_url, dst_dir, file_name, timeout=20, proxy_type=None, proxy=None, verbose=False):
     proxies = None
     if proxy_type is not None:
         proxies = {
@@ -46,10 +46,12 @@ def download_image(image_url, dst_dir, file_name, timeout=20, proxy_type=None, p
                 new_file_name = "{}.{}".format(file_name, file_type)
                 new_file_path = os.path.join(dst_dir, new_file_name)
                 shutil.move(file_path, new_file_path)
-                print("## OK:  {}  {}".format(new_file_name, image_url))
+                if verbose:
+                    print("## OK:  {}  {}".format(new_file_name, image_url))
             else:
                 os.remove(file_path)
-                print("## Err:  {}".format(image_url))
+                if verbose:
+                    print("## Err:  {}".format(image_url))
             break
         except Exception as e:
             if try_times < 3:
