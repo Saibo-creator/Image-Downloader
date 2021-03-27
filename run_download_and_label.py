@@ -22,15 +22,19 @@ if __name__ == '__main__':
     startTime = int(round(time.time()))
 
     line_list = []
-    with open('query_2000_2020_6147.csv', newline='') as csvfile:
+    query_fn = 'query_2000_2020_6147.csv'
+    # runtime_query_fn = f'{query_fn.split(".")[0]}_runtime.csv'
+
+    with open('query_2000_2020_6147_offset465.csv', newline='') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=',')
         for row in spamreader:
             line_list.append(row)
 
-    search_pairs = [(line[0], line[2], line[3]) for line in line_list]
     imageDownloader = ImageDownloader()
     img_root_dir = 'img/google/kids_actor_11_no_safe'
-    for search_pair in search_pairs:
+    while len(line_list) > 0:
+        line = line_list.pop(0)
+        search_pair = (line[0], line[2], line[3])
         folder_name = search_pair[0].replace(" ", "_")
         name = search_pair[0]
         birthdate = search_pair[1]
