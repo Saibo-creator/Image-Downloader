@@ -3,6 +3,7 @@ import shutil
 import os
 import time
 from image_downloader import google_download
+import csv
 import logging
 from ImageLabelingPackage.ImageDownloadLabeler import ImageDownloader
 from deepface import DeepFace
@@ -20,10 +21,13 @@ if __name__ == '__main__':
 
     startTime = int(round(time.time()))
 
-    with open('query_results/has_img/query_2000_2020_6147.csv', 'r', encoding="utf-8") as file:
-        line_list = file.read().splitlines()
+    line_list = []
+    with open('query_2000_2020_6147.csv', newline='') as csvfile:
+        spamreader = csv.reader(csvfile, delimiter=',')
+        for row in spamreader:
+            line_list.append(row)
 
-    search_pairs = [(line.split(",")[0], line.split(",")[2], line.split(",")[3]) for line in line_list]
+    search_pairs = [(line[0], line[2], line[3]) for line in line_list]
     imageDownloader = ImageDownloader()
     img_root_dir = 'img/google/kids_actor_11_no_safe'
     for search_pair in search_pairs:
@@ -49,7 +53,7 @@ if __name__ == '__main__':
                 else:
                     valid_img += 1
             _, ext = os.path.splitext(reference_img_name)
-            os.rename(reference_img_path, os.path.join(output_dir, "reference_img"+ext))
+            os.rename(reference_img_path, os.path.join(output_dir, "reference_img" + ext))
             if REMOVE_REFERENCE_IMG:
                 os.remove(os.path.join(output_dir, "reference_img", ext))
 
