@@ -48,6 +48,8 @@ if __name__ == '__main__':
         if num_img > 0:
             candidate_imgs = os.listdir(output_dir)
             reference_img_name = imageDownloader.download(output_dir, image_url)
+            if reference_img_name is None: # case when the reference image is no longer available thus download fails
+                continue
             reference_img_path = os.path.join(output_dir, reference_img_name)
             for img in candidate_imgs:
                 img_path = os.path.join(output_dir, img)
