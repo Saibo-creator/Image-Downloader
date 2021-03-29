@@ -48,21 +48,19 @@ if __name__ == '__main__':
         if num_img > 0:
             candidate_imgs = os.listdir(output_dir)
             reference_img_name = imageDownloader.download(output_dir, image_url)
-            if reference_img_name is None: # case when the reference image is no longer available thus download fails
-                continue
-            reference_img_path = os.path.join(output_dir, reference_img_name)
-            for img in candidate_imgs:
-                img_path = os.path.join(output_dir, img)
-                result = DeepFace.verify(reference_img_path, img_path, enforce_detection=False, model_name='VGG-Face')
-                if not result["verified"]:
-                    os.remove(img_path)
-                else:
-                    valid_img += 1
-            _, ext = os.path.splitext(reference_img_name)
-            os.rename(reference_img_path, os.path.join(output_dir, "reference_img" + ext))
-            if REMOVE_REFERENCE_IMG:
-                os.remove(os.path.join(output_dir, "reference_img", ext))
-
+            if reference_img_name is not None: # case when the reference image is no longer available thus download fails
+                reference_img_path = os.path.join(output_dir, reference_img_name)
+                for img in candidate_imgs:
+                    img_path = os.path.join(output_dir, img)
+                    result = DeepFace.verify(reference_img_path, img_path, enforce_detection=False, model_name='VGG-Face')
+                    if not result["verified"]:
+                        os.remove(img_path)
+                    else:
+                        valid_img += 1
+                _, ext = os.path.splitext(reference_img_name)
+                os.rename(reference_img_path, os.path.join(output_dir, "reference_img" + ext))
+                if REMOVE_REFERENCE_IMG:
+                    os.remove(os.path.join(output_dir, "reference_img", ext))
         if valid_img == 0:
             shutil.rmtree(output_dir)
         log.info(f"valid images = {valid_img}")
