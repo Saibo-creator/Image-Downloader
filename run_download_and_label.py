@@ -25,7 +25,7 @@ if __name__ == '__main__':
     query_fn = 'query_2000_2020_6147.csv'
     # runtime_query_fn = f'{query_fn.split(".")[0]}_runtime.csv'
 
-    with open('query_results/has_img/query_2006_2007_10.csv', newline='') as csvfile:
+    with open('query_results/has_img/query_2000_2020_6147_rest.csv', newline='') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=',')
         for row in spamreader:
             line_list.append(row)
