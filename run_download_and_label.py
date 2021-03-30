@@ -25,7 +25,7 @@ if __name__ == '__main__':
     query_fn = 'query_2000_2020_6147.csv'
     # runtime_query_fn = f'{query_fn.split(".")[0]}_runtime.csv'
 
-    with open('query_results/has_img/query_2000_2020_6147_offset2006.csv', newline='') as csvfile:
+    with open('query_results/has_img/query_2006_2007_10.csv', newline='') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=',')
         for row in spamreader:
             line_list.append(row)
@@ -48,15 +48,22 @@ if __name__ == '__main__':
         if num_img > 0:
             candidate_imgs = os.listdir(output_dir)
             reference_img_name = imageDownloader.download(output_dir, image_url)
-            if reference_img_name is not None: # case when the reference image is no longer available thus download fails
+            if reference_img_name is not None:  # case when the reference image is no longer available thus download fails
                 reference_img_path = os.path.join(output_dir, reference_img_name)
                 for img in candidate_imgs:
                     img_path = os.path.join(output_dir, img)
-                    result = DeepFace.verify(reference_img_path, img_path, enforce_detection=False, model_name='VGG-Face')
+                    try:
+                        result = DeepFace.verify(reference_img_path, img_path, enforce_detection=False,
+                                                 model_name='VGG-Face')
+                    except AttributeError as e:# case when input image is a pdf, then the package can not read it.
+                        log.info(e)
+                        result = {"verified": False}
+
                     if not result["verified"]:
                         os.remove(img_path)
                     else:
                         valid_img += 1
+
                 _, ext = os.path.splitext(reference_img_name)
                 os.rename(reference_img_path, os.path.join(output_dir, "reference_img" + ext))
                 if REMOVE_REFERENCE_IMG:
