@@ -12,7 +12,8 @@ import glob
 import os
 import sys
 import logging
-
+from time import sleep
+from selenium.common.exceptions import WebDriverException
 
 
 
@@ -64,15 +65,31 @@ def google_download(argv):
     if args.label_age and args.birthdate is None:
         raise RuntimeError("Birthdate is necessary if args.label_age is True")
 
-    crawled_urls = crawler.crawl_image_urls(args.keywords,
-                                            engine=args.engine, max_number=args.max_number,
-                                            face_only=args.face_only, safe_mode=args.safe_mode,
-                                            proxy_type=proxy_type, proxy=proxy,
-                                            browser=args.driver)
-    downloader.download_images(image_urls=crawled_urls, dst_dir=args.output,
-                               concurrency=args.num_threads, timeout=args.timeout,
-                               proxy_type=proxy_type, proxy=proxy,
-                               file_prefix=args.keywords)
+    sleep_time = 2
+    num_retires = 4
+
+    for x in range(num_retires):
+        """
+        selenium.common.exceptions.WebDriverException: Message: unknown error: Chrome failed to start: exited abnormally.
+        (unknown error: DevToolsActivePort file doesn't exist)
+        (The process started from chrome location /usr/bin/chromium is no longer running, so ChromeDriver is assuming that Chrome has crashed.)
+
+        """
+        try:
+            crawled_urls = crawler.crawl_image_urls(args.keywords,
+                                                    engine=args.engine, max_number=args.max_number,
+                                                    face_only=args.face_only, safe_mode=args.safe_mode,
+                                                    proxy_type=proxy_type, proxy=proxy,
+                                                    browser=args.driver)
+            downloader.download_images(image_urls=crawled_urls, dst_dir=args.output,
+                                       concurrency=args.num_threads, timeout=args.timeout,
+                                       proxy_type=proxy_type, proxy=proxy,
+                                       file_prefix=args.keywords)
+        except WebDriverException:
+            sleep(sleep_time)
+            pass
+        else:
+            break
 
     ageLabeler = ExifImageAgeLabeler()
     # dir = "Image-Downloader/download_images/google/kids10"
