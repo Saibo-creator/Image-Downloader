@@ -85,6 +85,7 @@ if __name__ == '__main__':
             imdb_id = line[col_names_dict["IMDb_ID"]].replace("nm", "")
             person = dict(ia.get_person(imdb_id).items())
             image_url = person.get("full-size headshot")
+            image_url = image_url if image_url is not None else "this is an invalid image url"
         else:
             raise RuntimeError("No reference image url column available in the csv file")
 
