@@ -9,6 +9,7 @@ import csv
 import logging
 from os.path import abspath,dirname
 from imdb import IMDb
+from imdb._exceptions import IMDbParserError
 from ImageLabelingPackage.ImageDownloadLabeler import ImageDownloader
 from deepface import DeepFace
 from PyS3Upload.PyS3Uploader import S3Uploader
@@ -83,7 +84,10 @@ if __name__ == '__main__':
             image_url = line[col_names_dict["image"]]
         elif "IMDb_ID" in col_names_dict:
             imdb_id = line[col_names_dict["IMDb_ID"]].replace("nm", "")
-            person = dict(ia.get_person(imdb_id).items())
+            try:
+                person = dict(ia.get_person(imdb_id).items())
+            except IMDbParserError as e:
+                person = {}
             image_url = person.get("full-size headshot")
             image_url = image_url if image_url is not None else "this is an invalid image url"
         else:
